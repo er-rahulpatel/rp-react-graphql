@@ -1,5 +1,5 @@
 import { gql } from 'apollo-server-express'
-import { find, filter } from 'lodash'
+import { find, filter, remove } from 'lodash'
 
 const people = [
     {
@@ -121,6 +121,15 @@ const typeDefs = gql`
 		cars: [Car]
 		personWithCars(id: String!): PersonWithCars
 	}
+
+    type Mutation {
+        createPerson(id: String!, firstName: String!, lastName: String!): Person
+        updatePerson(id: String!, firstName: String!, lastName: String!): Person
+        deletePerson(id: String!): Person
+        createCar(id: String!, year: Int!, make: String!, model: String!, price: Float!, personId: String!): Car
+        updateCar(id: String!, year: Int!, make: String!, model: String!, price: Float!, personId: String!): Car
+        deleteCar(id: String!): Car
+    }
 `;
 
 const resolvers = {
@@ -146,6 +155,72 @@ const resolvers = {
             };
         }
     },
+    Mutation: {
+        createPerson: (root, args) => {
+            const person = {
+                id: args.id,
+                firstName: args.firstName,
+                lastName: args.lastName
+            };
+            people.push(person);
+            return person;
+        },
+
+        updatePerson: (root, args) => {
+            const person = find(people, { id: args.id });
+            if(!person) {
+                throw new Error('Person not found for id: ' + args.id);
+            }
+            person.firstName = args.firstName;
+            person.lastName = args.lastName;
+            return person;
+        },
+
+        deletePerson: (root, args) => {
+            const person = find(people, { id: args.id });
+            if(!person) {
+                throw new Error('Person not found for id: ' + args.id);
+            }
+            remove(people, { id: args.id });
+            remove(cars, { personId: args.id });
+            return person;
+        },
+
+        createCar: (root, args) => {
+            const car = {
+                id: args.id,
+                year: args.year,
+                make: args.make,
+                model: args.model,
+                price: args.price,
+                personId: args.personId
+            };
+            cars.push(car);
+            return car;
+        },
+
+        updateCar: (root, args) => {
+            const car = find(cars, { id: args.id });
+            if(!car) {
+                throw new Error('Car not found for id: ' + args.id);
+            }
+            car.year = args.year;
+            car.make = args.make;
+            car.model = args.model;
+            car.price = args.price;
+            car.personId = args.personId;
+            return car;
+        },
+        
+        deleteCar: (root, args) => {
+            const car = find(cars, { id: args.id });
+            if(!car) {
+                throw new Error('Car not found for id: ' + args.id);
+            }
+            remove(cars, { id: args.id });
+            return car;
+        }
+    }
 }
 
 export { typeDefs, resolvers }
